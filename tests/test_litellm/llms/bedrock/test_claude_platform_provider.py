@@ -483,6 +483,7 @@ def test_claude_platform_unsupported_override_allows_context_management():
     optional_params = {
         "context_management": {"edits": [{"type": "clear_tool_uses_20250919"}]},
         "max_tokens": 10,
+        "claude_platform_unsupported_params": [],
     }
 
     request_body = config.transform_request(
@@ -495,6 +496,7 @@ def test_claude_platform_unsupported_override_allows_context_management():
 
     assert request_body["max_tokens"] == 10
     assert "context_management" in request_body
+    assert "claude_platform_unsupported_params" not in request_body
 
 
 def test_claude_platform_unsupported_override_ignores_invalid_type():
@@ -728,6 +730,35 @@ def test_chat_completion_claude_platform_drops_context_management_and_gateway_ac
             **API_KEY_KWARGS,
         )
 
+    assert requests[0]["body"] == EXPECTED_CHAT_BODY
+
+
+def test_chat_completion_claude_platform_drops_unsupported_override_from_body():
+    """
+    Regression: claude_platform_unsupported_params is a LiteLLM-only control.
+    get_optional_params copies it into optional_params, and transform_request
+    used to spread it into the Messages body. The AWS gateway then 400s
+    with Extra inputs are not permitted.
+    """
+    import litellm
+
+    requests = []
+
+    def mock_post(self, url, data=None, headers=None, **kwargs):
+        requests.append(_capture_request(url=url, headers=headers or {}, data=data))
+        return _fake_claude_platform_gateway(url=url, headers=headers or {}, data=data)
+
+    with patch("litellm.llms.custom_httpx.http_handler.HTTPHandler.post", mock_post):
+        response = litellm.completion(
+            model="bedrock/claude_platform/claude-sonnet-4-6",
+            messages=[{"role": "user", "content": "hello"}],
+            max_tokens=10,
+            workspace_id="wrkspc_test",
+            claude_platform_unsupported_params=[],
+            **API_KEY_KWARGS,
+        )
+
+    assert response.choices[0].message.content == "ok"
     assert requests[0]["body"] == EXPECTED_CHAT_BODY
 
 

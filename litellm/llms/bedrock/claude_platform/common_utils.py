@@ -21,6 +21,7 @@ CLAUDE_PLATFORM_ON_AWS_NON_REQUEST_PARAMS: Final = frozenset(
         "aws_workspace_id",
         "anthropic_workspace_id",
         "anthropic-workspace-id",
+        "claude_platform_unsupported_params",
     }
 )
 
