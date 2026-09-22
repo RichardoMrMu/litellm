@@ -34,9 +34,7 @@ def filter_claude_platform_request_body(
     log_dropped: bool = True,
 ) -> dict[str, object]:
     unsupported: Final = (
-        unsupported_override
-        if unsupported_override is not None
-        else CLAUDE_PLATFORM_ON_AWS_UNSUPPORTED_REQUEST_PARAMS
+        unsupported_override if unsupported_override is not None else CLAUDE_PLATFORM_ON_AWS_UNSUPPORTED_REQUEST_PARAMS
     )
     dropped_unsupported: Final = tuple(k for k in params if k in unsupported)
     if dropped_unsupported and log_dropped:
